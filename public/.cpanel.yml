@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/poszyin/pos.poszy.in/public
+    - /bin/cp * $DEPLOYPATH
