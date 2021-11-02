@@ -119,10 +119,80 @@
     <script>
         const checker = {};
 
+        const connectSerial = async function () {
+
+            /*
+            usbProductId: 29987
+                usbVendorId: 6790
+            */
+
+            if ("serial" in navigator) {
+                console.log('checker.port', checker.port)
+                if (checker.port) {
+                    const ports = await navigator.serial.getPorts();
+
+
+                    if (ports.length > 1) {
+                        alert('Many Ports Paired : Reset your browser permission and just select one serial port')
+                        return;
+                    }
+                    console.log('connected ports true', ports)
+                    checker.port = ports[0];
+                } else {
+                    checker.port = await navigator.serial.requestPort({});
+
+                    const ports = await navigator.serial.getPorts();
+                    console.log('connected ports', ports)
+                    checker.port = await navigator.serial.requestPort();
+
+                    console.log('checker.port get info', checker.port.getInfo())
+
+                }
+                console.log('checker.port get info', checker.port.getInfo())
+
+                await checker.port.open({baudRate: 9600, dataBits: 8});
+                const reader = checker.port.readable.getReader();
+
+                serialReader2(reader)
+
+                return;
+            }
+            alert('serial port is not support for this browser')
+        }
+
+
+        const serialReader2 = async function (reader) {
+
+            while (true) {
+                const {value, done} = await reader.read();
+                if (done) {
+                    console.log('[read] DONE', done);
+                    // Allow the serial port to be closed later.
+                    // reader.releaseLock();
+                    // break;
+                }
+                if (value) {
+                    // console.log('value x', value)
+
+                    const decoder = new TextDecoder("utf-8");
+                    if (decoder.decode(value).length >= 6) {
+                        console.log('current value string 6 chars', decoder.decode(value));
+                    }
+                    if (decoder.decode(value).length >= 5) {
+                        $('#weight_machine').val('')
+                        $('#weight_machine').val(decoder.decode(value))
+                        console.log('current value string 5 chars', decoder.decode(value));
+                    }
+                }
+
+            }
+        }
+
+
         function showMachine(input) {
             checker.input_val = input;
             let weight_machine = $('#weight_machine');
-            usbConnect(weight_machine);
+            usbConnect();
             $('#exampleModal').modal('show');
             weight_machine.val('');
         }
@@ -133,111 +203,6 @@
     <script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
     <script src="{{ asset('js/opening_stock.js?v=' . $asset_v) }}"></script>
 
-    {{--    <script src="{{ asset('js/pos.js?v=' . $asset_v) }}"></script>--}}
-    {{--    <script src="{{ asset('js/printer.js?v=' . $asset_v) }}"></script>--}}
-    {{--    <script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>--}}
-    {{--    <script src="{{ asset('js/opening_stock.js?v=' . $asset_v) }}"></script>--}}
-
-    {{--    <script>--}}
-    {{--        const checker = {};--}}
-    {{--        $(document).on('click', '.weight-port', function() {--}}
-    {{--            checker.input = $(this).parent('button').parent('span').parent('div').find('input');--}}
-    {{--            console.log('intput', checker.input);--}}
-    {{--            // var qty = __read_number(input);--}}
-
-
-    {{--            if ('serial' in navigator) {--}}
-    {{--                if (checker.port) {--}}
-    {{--                    // console.log('port',port)--}}
-    {{--                    //term.write('\x1b[31mDisconnected from Serial Port\x1b[m\r\n');--}}
-    {{--                    checker.port.close();--}}
-    {{--                    checker.port = undefined;--}}
-    {{--                    // connectButton.innerText = 'Connect';--}}
-    {{--                    document.getElementById('SerialSpeed').disabled = false;--}}
-
-    {{--                } else {--}}
-    {{--                    // connectButton.innerText = 'Disconnect';--}}
-    {{--                    getReader().then(function(res) {--}}
-    {{--                        console.log('res', res);--}}
-    {{--                        checker.port.close();--}}
-    {{--                    });--}}
-
-    {{--                    async function getReader() {--}}
-
-    {{--                        if (checker.port && checker.port.readable) {--}}
-    {{--                        } else {--}}
-    {{--                            checker.port = await navigator.serial.requestPort({});--}}
-
-    {{--                        }--}}
-
-
-    {{--                        console.log('PORT---', checker.port);--}}
-
-    {{--                        //var e = document.getElementById("SerialSpeed");--}}
-    {{--                        var strSpd = 9600;--}}
-
-    {{--                        var speed = parseInt(strSpd);--}}
-    {{--                        if (checker.port.readable) {--}}
-    {{--                        } else {--}}
-    {{--                            await checker.port.open({ baudRate: [speed] });--}}
-    {{--                        }--}}
-
-
-    {{--                        //document.getElementById('SerialSpeed').disabled = true;--}}
-
-    {{--                        //connectButton.innerText = 'Disconnect';--}}
-    {{--                        //term.write('\x1b[31mConnected using Web Serial API !\x1b[m\r\n');--}}
-
-    {{--                        checker.appendStream = new WritableStream({--}}
-    {{--                            write(chunk) {--}}
-
-    {{--                                if (chunk.length >= 6) {--}}
-    {{--                                    console.log('chunk', chunk);--}}
-    {{--                                    checker.input.val(chunk);--}}
-    {{--                                    __write_number(checker.input, chunk);--}}
-    {{--                                    checker.input.change();--}}
-    {{--                                    // exit;--}}
-    {{--                                    // checker.port.close();--}}
-    {{--                                    // checker.port = undefined;--}}
-    {{--                                    //return false;--}}
-    {{--                                    // break;--}}
-    {{--                                    //appendStream.destroy();--}}
-
-    {{--                                }--}}
-
-    {{--                                //term.write(chunk);--}}
-    {{--                            },--}}
-    {{--                        });--}}
-    {{--                        // console.log('appendStream----', appendStream);--}}
-
-
-    {{--                        checker.port.readable--}}
-    {{--                            .pipeThrough(new TextDecoderStream())--}}
-    {{--                            .pipeTo(checker.appendStream);--}}
-
-
-    {{--                        //term.on('data', function(data) {--}}
-    {{--                        //     serialWrite(data);--}}
-    {{--                        //  });--}}
-
-    {{--                    }--}}
-
-
-    {{--                }--}}
-
-
-    {{--            } else {--}}
-    {{--                alert('Port is not accessible. Contact technical team for support');--}}
-    {{--                //const error = document.createElement('p');--}}
-    {{--                //error.innerHTML = '<p>Support for Serial Web API not enabled. Please enable it using chrome://flags/ and enable Experimental Web Platform fetures</p>';--}}
-
-    {{--            }--}}
-
-
-    {{--        });--}}
-
-
-    {{--    </script>--}}
 
     @include('sale_pos.partials.keyboard_shortcuts')
 
